@@ -21,3 +21,6 @@ minGameVersion: 147
 
 #this is a java mod
 java: true
+
+#this mod is not essential for multiplayer - client-side utility only
+hidden: true
