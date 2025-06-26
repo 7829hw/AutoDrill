@@ -17,9 +17,11 @@ import static arc.Core.bundle;
 
 public class BridgeDrill {
     public static void fill(Tile tile, Drill drill, Direction direction) {
-        if (drill.size != 2) throw new InputMismatchException("Drill must have a size of 2");
+        if (drill.size != 2)
+            throw new InputMismatchException("Drill must have a size of 2");
 
-        int maxTiles = Core.settings.getInt((drill == Blocks.mechanicalDrill ? "mechanical" : "pneumatic") + "-drill-max-tiles");
+        int maxTiles = Core.settings
+                .getInt((drill == Blocks.mechanicalDrill ? "mechanical" : "pneumatic") + "-drill-max-tiles");
 
         Seq<Tile> tiles = Util.getConnectedTiles(tile, maxTiles);
         Util.expandArea(tiles, drill.size / 2);
@@ -27,12 +29,19 @@ public class BridgeDrill {
     }
 
     private static void placeDrillsAndBridges(Tile source, Seq<Tile> tiles, Drill drill, Direction direction) {
+        // v8.0: Check if player unit is not null
+        if (Vars.player.dead() || Vars.player.unit() == null)
+            return;
+
         Point2 directionConfig = new Point2(direction.p.x * 3, direction.p.y * 3);
 
         Seq<Tile> drillTiles = tiles.copy().filter(BridgeDrill::isDrillTile);
         Seq<Tile> bridgeTiles = tiles.copy().filter(BridgeDrill::isBridgeTile);
 
-        int minOresPerDrill = Core.settings.getInt((drill == Blocks.blastDrill ? "airblast" : (drill == Blocks.laserDrill ? "laser" : (drill == Blocks.pneumaticDrill ? "pneumatic" : "mechanical"))) + "-drill-min-ores");
+        int minOresPerDrill = Core.settings.getInt((drill == Blocks.blastDrill ? "airblast"
+                : (drill == Blocks.laserDrill ? "laser"
+                        : (drill == Blocks.pneumaticDrill ? "pneumatic" : "mechanical")))
+                + "-drill-min-ores");
 
         drillTiles.filter(t -> {
             ObjectIntMap.Entry<Item> itemAndCount = Util.countOre(t, drill);
@@ -45,7 +54,8 @@ public class BridgeDrill {
             neighbors.filter(BridgeDrill::isBridgeTile);
 
             for (Tile neighbor : neighbors) {
-                if (bridgeTiles.contains(neighbor)) return true;
+                if (bridgeTiles.contains(neighbor))
+                    return true;
             }
 
             neighbors.filter(n -> {
@@ -62,7 +72,8 @@ public class BridgeDrill {
         });
 
         Tile outerMost = bridgeTiles.max((t) -> direction.p.x == 0 ? t.y * direction.p.y : t.x * direction.p.x);
-        if (outerMost == null) return;
+        if (outerMost == null)
+            return;
 
         Tile outlet = outerMost.nearby(directionConfig);
         bridgeTiles.add(outlet);
@@ -94,17 +105,21 @@ public class BridgeDrill {
         switch (x % 6) {
             case 0:
             case 2:
-                if ((y - 1) % 6 == 0) return true;
+                if ((y - 1) % 6 == 0)
+                    return true;
                 break;
             case 1:
-                if ((y - 3) % 6 == 0 || (y - 3) % 6 == 2) return true;
+                if ((y - 3) % 6 == 0 || (y - 3) % 6 == 2)
+                    return true;
                 break;
             case 3:
             case 5:
-                if ((y - 4) % 6 == 0) return true;
+                if ((y - 4) % 6 == 0)
+                    return true;
                 break;
             case 4:
-                if ((y) % 6 == 0 || (y) % 6 == 2) return true;
+                if ((y) % 6 == 0 || (y) % 6 == 2)
+                    return true;
                 break;
         }
 

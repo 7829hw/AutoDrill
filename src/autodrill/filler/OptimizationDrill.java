@@ -23,12 +23,20 @@ public class OptimizationDrill {
     }
 
     public static void fill(Tile tile, Drill drill, boolean waterExtractorsAndPowerNodes) {
-        int maxTiles = Core.settings.getInt((drill == Blocks.mechanicalDrill ? "laser" : "airblast") + "-drill-max-tiles");
+        // v8.0: Check if player unit is not null
+        if (Vars.player.dead() || Vars.player.unit() == null)
+            return;
+
+        int maxTiles = Core.settings
+                .getInt((drill == Blocks.mechanicalDrill ? "laser" : "airblast") + "-drill-max-tiles");
 
         Seq<Tile> tiles = Util.getConnectedTiles(tile, maxTiles);
         Util.expandArea(tiles, drill.size / 2);
 
-        int minOresPerDrill = Core.settings.getInt((drill == Blocks.blastDrill ? "airblast" : (drill == Blocks.laserDrill ? "laser" : (drill == Blocks.pneumaticDrill ? "pneumatic" : "mechanical"))) + "-drill-min-ores");
+        int minOresPerDrill = Core.settings.getInt((drill == Blocks.blastDrill ? "airblast"
+                : (drill == Blocks.laserDrill ? "laser"
+                        : (drill == Blocks.pneumaticDrill ? "pneumatic" : "mechanical")))
+                + "-drill-min-ores");
 
         Floor floor = tile.overlay() != Blocks.air ? tile.overlay() : tile.floor();
 
@@ -51,7 +59,8 @@ public class OptimizationDrill {
 
         recursiveMaxSearch(tiles, drill, tilesItemAndCount, selection, new Seq<>(), 0, new Seq<>(), maxTries, 0);
 
-        if (waterExtractorsAndPowerNodes && Core.settings.getBool(bundle.get("auto-drill.settings.place-water-extractor-and-power-nodes")))
+        if (waterExtractorsAndPowerNodes
+                && Core.settings.getBool(bundle.get("auto-drill.settings.place-water-extractor-and-power-nodes")))
             placeWaterExtractorsAndPowerNodes(selection, drill);
 
         for (Tile t : selection) {
@@ -60,7 +69,9 @@ public class OptimizationDrill {
         }
     }
 
-    private static int recursiveMaxSearch(Seq<Tile> tiles, Drill drill, ObjectMap<Tile, ObjectIntMap.Entry<Item>> tilesItemAndCount, Seq<Tile> selection, Seq<Rect> rects, int sum, Seq<Integer> triesPerLevel, final int maxTries, final int level) {
+    private static int recursiveMaxSearch(Seq<Tile> tiles, Drill drill,
+            ObjectMap<Tile, ObjectIntMap.Entry<Item>> tilesItemAndCount, Seq<Tile> selection, Seq<Rect> rects, int sum,
+            Seq<Integer> triesPerLevel, final int maxTries, final int level) {
         int max = sum;
         Seq<Tile> maxSelection = selection.copy();
 
@@ -72,13 +83,15 @@ public class OptimizationDrill {
         for (Tile tile : tiles) {
             Rect rect = Util.getBlockRect(tile, drill);
 
-            if ((rects.isEmpty() || rects.find(r -> r.overlaps(rect)) == null) && Build.validPlace(drill, Vars.player.team(), tile.x, tile.y, 0)) {
+            if ((rects.isEmpty() || rects.find(r -> r.overlaps(rect)) == null)
+                    && Build.validPlace(drill, Vars.player.team(), tile.x, tile.y, 0)) {
                 int newSum = sum + tilesItemAndCount.get(tile).value;
 
                 Seq<Tile> newSelection = selection.copy().add(tile);
                 Seq<Rect> newRects = rects.copy().add(rect);
 
-                int newMax = recursiveMaxSearch(tiles, drill, tilesItemAndCount, newSelection, newRects, newSum, triesPerLevel, maxTries, level + 1);
+                int newMax = recursiveMaxSearch(tiles, drill, tilesItemAndCount, newSelection, newRects, newSum,
+                        triesPerLevel, maxTries, level + 1);
 
                 if (newMax > max) {
                     max = newMax;
@@ -86,7 +99,8 @@ public class OptimizationDrill {
                 }
 
                 triesPerLevel.set(level, triesPerLevel.get(level) + 1);
-                if (triesPerLevel.get(level) >= maxTries / Math.pow(2, level + 1)) break;
+                if (triesPerLevel.get(level) >= maxTries / Math.pow(2, level + 1))
+                    break;
             }
         }
 
@@ -97,6 +111,10 @@ public class OptimizationDrill {
     }
 
     private static void placeWaterExtractorsAndPowerNodes(Seq<Tile> selection, Drill drill) {
+        // v8.0: Check if player unit is not null
+        if (Vars.player.dead() || Vars.player.unit() == null)
+            return;
+
         Seq<Rect> rects = new Seq<>();
         for (Tile t : selection) {
             rects.add(Util.getBlockRect(t, drill));
@@ -112,7 +130,8 @@ public class OptimizationDrill {
                 Rect waterExtractorRect = Util.getBlockRect(n, Blocks.waterExtractor);
                 BuildPlan buildPlan = new BuildPlan(n.x, n.y, 0, Blocks.waterExtractor);
 
-                if (buildPlan.placeable(Vars.player.team()) && rects.find(r -> r.overlaps(waterExtractorRect)) == null) {
+                if (buildPlan.placeable(Vars.player.team())
+                        && rects.find(r -> r.overlaps(waterExtractorRect)) == null) {
                     waterExtractorTiles.add(n);
                     rects.add(waterExtractorRect);
                     break;

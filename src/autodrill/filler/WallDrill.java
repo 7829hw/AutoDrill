@@ -19,6 +19,10 @@ import static arc.Core.bundle;
 
 public class WallDrill {
     public static void fill(Tile tile, BeamDrill drill, Direction direction) {
+        // v8.0: Check if player unit is not null
+        if (Vars.player.dead() || Vars.player.unit() == null)
+            return;
+
         Seq<Tile> tiles = getConnectedWallTiles(tile, direction);
 
         Seq<Tile> boreTiles = new Seq<>();
@@ -30,7 +34,8 @@ public class WallDrill {
         for (Tile tile1 : tiles) {
             for (int i = 0; i < drill.range; i++) {
                 Tile boreTile = tile1.nearby((i + 1) * -direction.p.x + offset.x, (i + 1) * -direction.p.y + offset.y);
-                if (boreTile == null) continue;
+                if (boreTile == null)
+                    continue;
 
                 BuildPlan buildPlan = new BuildPlan(boreTile.x, boreTile.y, direction.r, drill);
                 if (buildPlan.placeable(Vars.player.team())) {
@@ -43,7 +48,8 @@ public class WallDrill {
                             break;
                         }
                     }
-                    if (occupied) continue;
+                    if (occupied)
+                        continue;
 
                     for (int j = -(drill.size - 1) / 2; j <= drill.size / 2; j++) {
                         occupiedSecondaryAxis.add(sa + j);
@@ -54,7 +60,8 @@ public class WallDrill {
                 }
             }
         }
-        if (boreTiles.isEmpty()) return;
+        if (boreTiles.isEmpty())
+            return;
 
         Seq<Tile> ductTiles = new Seq<>();
         for (Tile boreTile : boreTiles) {
@@ -62,23 +69,31 @@ public class WallDrill {
                 Tile ductTile = boreTile.nearby(new Point2(
                         -offsetOpposite.x + directionOpposite.p.x + (i * Math.abs(direction.p.y)),
                         -offsetOpposite.y + directionOpposite.p.y + (i * Math.abs(direction.p.x))));
-                if (ductTile == null) continue;
+                if (ductTile == null)
+                    continue;
 
                 ductTiles.add(ductTile);
             }
         }
-        if (ductTiles.isEmpty()) return;
+        if (ductTiles.isEmpty())
+            return;
 
-        Tile outerMostDuctTile = ductTiles.copy().filter(t -> boreTiles.find(bt -> direction.secondaryAxis(new Point2(bt.x, bt.y)) == direction.secondaryAxis(new Point2(t.x, t.y))) == null).max(t -> -direction.primaryAxis(new Point2(t.x, t.y)));
-        if (outerMostDuctTile == null) return;
+        Tile outerMostDuctTile = ductTiles.copy()
+                .filter(t -> boreTiles.find(bt -> direction.secondaryAxis(new Point2(bt.x, bt.y)) == direction
+                        .secondaryAxis(new Point2(t.x, t.y))) == null)
+                .max(t -> -direction.primaryAxis(new Point2(t.x, t.y)));
+        if (outerMostDuctTile == null)
+            return;
         ductTiles.sort(t -> t.dst2(outerMostDuctTile));
         Seq<Tile> connectingTiles = new Seq<>();
         connectingTiles.add(outerMostDuctTile);
         for (Tile ductTile : ductTiles) {
-            if (connectingTiles.contains(ductTile)) continue;
+            if (connectingTiles.contains(ductTile))
+                continue;
 
             Tile closestDuctTile = connectingTiles.min(t -> t.dst2(ductTile));
-            if (closestDuctTile == null) continue;
+            if (closestDuctTile == null)
+                continue;
 
             Point2 currentPoint = new Point2(ductTile.x, ductTile.y);
             Point2 goal = new Point2(closestDuctTile.x, closestDuctTile.y);
@@ -90,16 +105,19 @@ public class WallDrill {
                 int sa = direction.secondaryAxis(currentPoint);
 
                 Tile currentTile = Vars.world.tile(currentPoint.x, currentPoint.y);
-                if (currentTile != null && !connectingTiles.contains(currentTile)) connectingTiles.add(currentTile);
+                if (currentTile != null && !connectingTiles.contains(currentTile))
+                    connectingTiles.add(currentTile);
 
                 if ((pa < paGoal && sa == saGoal) || pa > paGoal) {
                     if (Math.abs(pa) < Math.abs(paGoal))
                         currentPoint.add(Math.abs(direction.p.x), Math.abs(direction.p.y));
-                    else currentPoint.add(-Math.abs(direction.p.x), -Math.abs(direction.p.y));
+                    else
+                        currentPoint.add(-Math.abs(direction.p.x), -Math.abs(direction.p.y));
                 } else {
                     if (Math.abs(sa) < Math.abs(saGoal))
                         currentPoint.add(Math.abs(direction.p.y), Math.abs(direction.p.x));
-                    else currentPoint.add(-Math.abs(direction.p.y), -Math.abs(direction.p.x));
+                    else
+                        currentPoint.add(-Math.abs(direction.p.y), -Math.abs(direction.p.x));
                 }
             }
         }
@@ -120,12 +138,14 @@ public class WallDrill {
                     break;
                 }
             }
-            if (tile1 == null || tile2 == null) continue;
+            if (tile1 == null || tile2 == null)
+                continue;
 
             if (tile2.equals(outerMostDuctTile)) {
                 BuildPlan buildPlan = new BuildPlan(tile2.x, tile2.y, directionOpposite.r, Blocks.duct);
                 Vars.player.unit().addBuild(buildPlan);
-                buildPlan = new BuildPlan(tile2.x + directionOpposite.p.x, tile2.y + directionOpposite.p.y, directionOpposite.r, Blocks.duct);
+                buildPlan = new BuildPlan(tile2.x + directionOpposite.p.x, tile2.y + directionOpposite.p.y,
+                        directionOpposite.r, Blocks.duct);
                 Vars.player.unit().addBuild(buildPlan);
             } else {
                 BuildPlan buildPlan = new BuildPlan(tile2.x, tile2.y, tile2.relativeTo(tile1), Blocks.duct);
@@ -136,8 +156,10 @@ public class WallDrill {
         for (Tile ductTile : connectingTiles) {
             float ductTileIndex = connectingTiles.indexOf(ductTile);
 
-            Tile neighbor = connectingTiles.find(t -> connectingTiles.indexOf(t) < ductTileIndex && t.relativeTo(ductTile) != -1);
-            if (neighbor == null) continue;
+            Tile neighbor = connectingTiles
+                    .find(t -> connectingTiles.indexOf(t) < ductTileIndex && t.relativeTo(ductTile) != -1);
+            if (neighbor == null)
+                continue;
 
             BuildPlan buildPlan = new BuildPlan(ductTile.x, ductTile.y, ductTile.relativeTo(neighbor), Blocks.duct);
             Vars.player.unit().addBuild(buildPlan);
@@ -146,15 +168,19 @@ public class WallDrill {
         Tile outerMost = boreTiles.max(t -> -direction.primaryAxis(new Point2(t.x, t.y)));
         for (Tile boreTile : boreTiles) {
             Tile beamNodeTile = Vars.world.tile(
-                    Math.abs(direction.p.x) * outerMost.x + Math.abs(direction.p.y) * boreTile.x - offsetOpposite.x + directionOpposite.p.x * 2,
-                    Math.abs(direction.p.y) * outerMost.y + Math.abs(direction.p.x) * boreTile.y - offsetOpposite.y + directionOpposite.p.y * 2);
-            if (beamNodeTile == null) continue;
+                    Math.abs(direction.p.x) * outerMost.x + Math.abs(direction.p.y) * boreTile.x - offsetOpposite.x
+                            + directionOpposite.p.x * 2,
+                    Math.abs(direction.p.y) * outerMost.y + Math.abs(direction.p.x) * boreTile.y - offsetOpposite.y
+                            + directionOpposite.p.y * 2);
+            if (beamNodeTile == null)
+                continue;
 
             BuildPlan buildPlan = new BuildPlan(beamNodeTile.x, beamNodeTile.y, 0, Blocks.beamNode);
             Vars.player.unit().addBuild(buildPlan);
             while (beamNodeTile.dst(boreTile) > 10 * Vars.tilesize) {
                 beamNodeTile = beamNodeTile.nearby(direction.p.x * 5, direction.p.y * 5);
-                if (beamNodeTile == null) break;
+                if (beamNodeTile == null)
+                    break;
 
                 buildPlan = new BuildPlan(beamNodeTile.x, beamNodeTile.y, 0, Blocks.beamNode);
                 Vars.player.unit().addBuild(buildPlan);
@@ -181,14 +207,16 @@ public class WallDrill {
         while (!queue.isEmpty() && tiles.size < maxTiles) {
             Tile currentTile = queue.removeFirst();
 
-            if (visited.contains(currentTile)) continue;
+            if (visited.contains(currentTile))
+                continue;
 
             if (currentTile.wallDrop() == sourceItem) {
                 for (int x = -2; x <= 2; x++) {
                     for (int y = -2; y <= 2; y++) {
                         if (!(x == 0 && y == 0)) {
                             Tile neighbor = currentTile.nearby(x, y);
-                            if (neighbor == null) continue;
+                            if (neighbor == null)
+                                continue;
 
                             Tile nearby = neighbor.nearby(new Point2(-direction.p.x, -direction.p.y));
                             if (!visited.contains(neighbor) && nearby != null && !nearby.solid()) {
