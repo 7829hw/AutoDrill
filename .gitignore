@@ -33,7 +33,7 @@ desktop-sdl/build/
 ios/robovm.properties
 packr-out/
 config/
-run.bat
+*.gif
 
 version.properties
 
@@ -45,6 +45,7 @@ version.properties
 *.ear
 hs_err_pid*
 crash-report-*
+replay_pid*
 
 ## Robovm
 /ios/robovm-build/

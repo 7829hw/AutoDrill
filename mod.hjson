@@ -1,9 +1,23 @@
+#the mod name as displayed in-game
 displayName: "AutoDrill"
+
+#the internal name of your mod
 name: "auto-drill"
+
+#your name
 author: "Pointifix"
+
+#the fully qualified main class of the mod
 main: "autodrill.AutoDrill"
+
+#the mod description as seen in the mod dialog
 description: "Adds tools for automatically filling resource patches with drills"
+
+#the mod version
 version: 1.0
-minGameVersion: 136
+
+#the minimum game build required to run this mod
+minGameVersion: 145
+
+#this is a java mod
 java: true
-hidden: true
