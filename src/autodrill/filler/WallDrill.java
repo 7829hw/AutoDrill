@@ -78,10 +78,23 @@ public class WallDrill {
         if (ductTiles.isEmpty())
             return;
 
-        Tile outerMostDuctTile = ductTiles.copy()
-                .filter(t -> boreTiles.find(bt -> direction.secondaryAxis(new Point2(bt.x, bt.y)) == direction
-                        .secondaryAxis(new Point2(t.x, t.y))) == null)
-                .max(t -> -direction.primaryAxis(new Point2(t.x, t.y)));
+        Seq<Tile> filteredDuctTiles = new Seq<>();
+        for (Tile t : ductTiles.copy()) {
+            boolean found = false;
+            for (Tile bt : boreTiles) {
+                if (direction.secondaryAxis(new Point2(bt.x, bt.y)) == direction.secondaryAxis(new Point2(t.x, t.y))) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                filteredDuctTiles.add(t);
+            }
+        }
+        Tile outerMostDuctTile = null;
+        if (!filteredDuctTiles.isEmpty()) {
+            outerMostDuctTile = filteredDuctTiles.max(t -> -direction.primaryAxis(new Point2(t.x, t.y)));
+        }
         if (outerMostDuctTile == null)
             return;
         ductTiles.sort(t -> t.dst2(outerMostDuctTile));
@@ -231,17 +244,26 @@ public class WallDrill {
         }
 
         Seq<Tile> tilesCopy = tiles.copy();
-        tiles.filter(t1 -> {
+        Seq<Tile> validTiles = new Seq<>();
+        for (Tile t1 : tiles) {
             Point2 pT1 = Util.tileToPoint2(t1);
             int paT1 = direction.primaryAxis(pT1);
             int saT1 = direction.secondaryAxis(pT1);
 
-            return !tilesCopy.contains(t2 -> {
+            boolean isValid = true;
+            for (Tile t2 : tilesCopy) {
                 Point2 pT2 = Util.tileToPoint2(t2);
+                if (t2 != t1 && direction.secondaryAxis(pT2) == saT1 && direction.primaryAxis(pT2) < paT1) {
+                    isValid = false;
+                    break;
+                }
+            }
 
-                return t2 != t1 && direction.secondaryAxis(pT2) == saT1 && direction.primaryAxis(pT2) < paT1;
-            });
-        });
+            if (isValid) {
+                validTiles.add(t1);
+            }
+        }
+        tiles = validTiles;
 
         tiles.sort(t -> direction.secondaryAxis(Util.tileToPoint2(t)));
 
@@ -253,18 +275,14 @@ public class WallDrill {
         int offset2 = block.size / 2;
 
         switch (direction) {
-            case RIGHT -> {
+            case RIGHT:
                 return new Point2(-offset2, 0);
-            }
-            case UP -> {
+            case UP:
                 return new Point2(0, -offset2);
-            }
-            case LEFT -> {
+            case LEFT:
                 return new Point2(offset1, 0);
-            }
-            default -> {
+            default:
                 return new Point2(0, offset1);
-            }
         }
     }
 }

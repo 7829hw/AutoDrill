@@ -45,10 +45,16 @@ public class OptimizationDrill {
             tilesItemAndCount.put(t, Util.countOre(t, drill));
         }
 
-        tiles.filter(t -> {
+        Seq<Tile> validTiles = new Seq<>();
+        for (Tile t : tiles) {
             ObjectIntMap.Entry<Item> itemAndCount = tilesItemAndCount.get(t);
-            return itemAndCount != null && itemAndCount.key == floor.itemDrop && itemAndCount.value >= minOresPerDrill;
-        }).sort(t -> {
+            if (itemAndCount != null && itemAndCount.key == floor.itemDrop && itemAndCount.value >= minOresPerDrill) {
+                validTiles.add(t);
+            }
+        }
+        tiles = validTiles;
+
+        tiles.sort(t -> {
             ObjectIntMap.Entry<Item> itemAndCount = tilesItemAndCount.get(t);
             return itemAndCount == null ? Integer.MIN_VALUE : -itemAndCount.value;
         });

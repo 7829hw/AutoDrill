@@ -35,41 +35,71 @@ public class BridgeDrill {
 
         Point2 directionConfig = new Point2(direction.p.x * 3, direction.p.y * 3);
 
-        Seq<Tile> drillTiles = tiles.copy().filter(BridgeDrill::isDrillTile);
-        Seq<Tile> bridgeTiles = tiles.copy().filter(BridgeDrill::isBridgeTile);
+        Seq<Tile> drillTiles = new Seq<>();
+        for (Tile t : tiles) {
+            if (isDrillTile(t)) {
+                drillTiles.add(t);
+            }
+        }
+
+        Seq<Tile> bridgeTiles = new Seq<>();
+        for (Tile t : tiles) {
+            if (isBridgeTile(t)) {
+                bridgeTiles.add(t);
+            }
+        }
 
         int minOresPerDrill = Core.settings.getInt((drill == Blocks.blastDrill ? "airblast"
                 : (drill == Blocks.laserDrill ? "laser"
                         : (drill == Blocks.pneumaticDrill ? "pneumatic" : "mechanical")))
                 + "-drill-min-ores");
 
-        drillTiles.filter(t -> {
+        Seq<Tile> validDrillTiles = new Seq<>();
+        for (Tile t : drillTiles) {
             ObjectIntMap.Entry<Item> itemAndCount = Util.countOre(t, drill);
 
             if (itemAndCount == null || itemAndCount.key != source.drop() || itemAndCount.value < minOresPerDrill) {
-                return false;
+                continue;
             }
 
             Seq<Tile> neighbors = Util.getNearbyTiles(t.x, t.y, drill);
-            neighbors.filter(BridgeDrill::isBridgeTile);
-
+            Seq<Tile> bridgeNeighbors = new Seq<>();
             for (Tile neighbor : neighbors) {
-                if (bridgeTiles.contains(neighbor))
-                    return true;
+                if (isBridgeTile(neighbor)) {
+                    bridgeNeighbors.add(neighbor);
+                }
             }
 
-            neighbors.filter(n -> {
-                BuildPlan buildPlan = new BuildPlan(n.x, n.y, 0, Blocks.itemBridge);
-                return buildPlan.placeable(Vars.player.team());
-            });
-
-            if (!neighbors.isEmpty()) {
-                bridgeTiles.add(neighbors);
-                return true;
+            boolean hasValidBridge = false;
+            for (Tile neighbor : bridgeNeighbors) {
+                if (bridgeTiles.contains(neighbor)) {
+                    hasValidBridge = true;
+                    break;
+                }
             }
 
-            return false;
-        });
+            if (!hasValidBridge) {
+                Seq<Tile> placeableNeighbors = new Seq<>();
+                for (Tile n : bridgeNeighbors) {
+                    BuildPlan buildPlan = new BuildPlan(n.x, n.y, 0, Blocks.itemBridge);
+                    if (buildPlan.placeable(Vars.player.team())) {
+                        placeableNeighbors.add(n);
+                    }
+                }
+
+                if (!placeableNeighbors.isEmpty()) {
+                    for (Tile neighbor : placeableNeighbors) {
+                        bridgeTiles.add(neighbor);
+                    }
+                    hasValidBridge = true;
+                }
+            }
+
+            if (hasValidBridge) {
+                validDrillTiles.add(t);
+            }
+        }
+        drillTiles = validDrillTiles;
 
         Tile outerMost = bridgeTiles.max((t) -> direction.p.x == 0 ? t.y * direction.p.y : t.x * direction.p.x);
         if (outerMost == null)
