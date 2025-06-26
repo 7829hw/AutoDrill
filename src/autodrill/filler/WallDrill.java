@@ -91,10 +91,10 @@ public class WallDrill {
                 filteredDuctTiles.add(t);
             }
         }
-        Tile outerMostDuctTile = null;
-        if (!filteredDuctTiles.isEmpty()) {
-            outerMostDuctTile = filteredDuctTiles.max(t -> -direction.primaryAxis(new Point2(t.x, t.y)));
-        }
+
+        if (filteredDuctTiles.isEmpty())
+            return;
+        final Tile outerMostDuctTile = filteredDuctTiles.max(t -> -direction.primaryAxis(new Point2(t.x, t.y)));
         if (outerMostDuctTile == null)
             return;
         ductTiles.sort(t -> t.dst2(outerMostDuctTile));
